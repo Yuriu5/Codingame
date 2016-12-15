@@ -1,3 +1,11 @@
+/*!
+ * \file main.cpp
+ * \brief SandBox mode for Hypersonic
+ * \author Yuriu5
+ * \version 1.0
+ */
+
+
 #define WIDTH   13
 #define HEIGHT  11
 #define LOOP_MAX 200
@@ -43,6 +51,7 @@ typedef struct _tPlayer{
     int range;
     int nbBombs;
     int score;
+    int id;
 }tPlayer;
 
 int main(int argc, char *argv[]){
@@ -73,10 +82,10 @@ int main(int argc, char *argv[]){
         
         //Update tick
         updateTick(&listBombs);
-        //Explose each bomb at 0
+        //Explose each bomb at 0 // Update score
         exploseBomb(&listBombs, map);
-        //Update score
         //Check if player dead
+        deathPlayer = checkDeath(map,listPlayers);
         //Update map with explosion
         //Display map to console
         //Give input to each player
@@ -87,13 +96,30 @@ int main(int argc, char *argv[]){
     }
 }
 
+
+/*! \fn void updateTick(vector<tBomb> &listBombs)
+ *  \brief Update tick of each bomb
+ *  \param[in,out] listBombs Reference to the vector containing the bomb to update
+ *  \return Nothing
+ */
 void updateTick(vector<tBomb> &listBombs){
     for(int i=0; i < listBombs.size(); i++){
         listBombs[i].tick--;
     }
 }
 
-void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
+/*! \brief Explose the bomb\n
+ *         Check the tick of each bomb and explose them if tick is equal to zero.\n 
+ *         Explose bomb that are caught in the range of a bomb exploding.\n 
+ *         Update the score of each player.\n
+ *         Remove the bombs explosed from the vector.\n
+ *  \param[in,out] listbombs    Reference to the vector containing the bomb ingame
+ *  \param[in,out] listPlayers  Reference to the vector of player
+ *  \param[in,out] map          Point to the map matrix
+ *  \param[in]     updateMap    Bool to force the update of the map during explosion
+ *  \return  Nothing
+ */
+void exploseBomb(vector<tBomb> &listBombs, vector<tPlayer> &listPlayers, char **map, bool updateMap = true){
     queue<int> fifoBombToExplose;
     int idxBombToRemove[100];
     int nbBombToRemove = 0;
@@ -183,6 +209,11 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
         } 
         if(true == updateMap)
             map[listBombs[idxBomb].y][listBombs[idxBomb].x] = EXPLOSED;
+            
+        //Update score of the corresponding player    
+        for(int i=0; i < listPlayers.size(); i++){
+            if(listPlayers[i].id == listBombs[idxBomb].owner) listPlayers[i].score += nbExplosed;
+        }
     }            
     
     //Sort idxBombToRemove (sort max to min)
@@ -205,10 +236,37 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
         idxToRemove = idxBombToRemoveSorted[i];
         listBombs.erase(listBombs.begin()+idxToRemove);
     }
-    
-    
-    
+}
 
+bool checkDeath(char **map, vector<tPlayer> listPlayers){
+    bool retDeath = false;
+    for(int i=0; i < listPlayers.size(); i++){
+        if(EXPLOSED == map[listPlayers[i].y][listPlayers[i].x])
+            retDeath = true;
+    }
+    return retDeath;
+}
+
+void printMap(char **map, vector<tPlayer> &listPlayer)
+    char copyMap[HEIGHT][WIDTH];
+    memcpy(copyMap, map, HEIGHT*WIDTH*sizeof(char));
+    for(int i=0; i < listPlayer.size(); i++){
+        switch(listPlayer[i]){
+            case 0: copyMap[listPlayer[i].y][listPlayer[i].x] = PLAYER_0;break;
+            case 1: copyMap[listPlayer[i].y][listPlayer[i].x] = PLAYER_1;break;
+            case 2: copyMap[listPlayer[i].y][listPlayer[i].x] = PLAYER_2;break;
+            case 3: copyMap[listPlayer[i].y][listPlayer[i].x] = PLAYER_3;break;
+        }
+    }
+          
+    for(int i = 0;i < HEIGHT; i++){
+        char row[WIDTH+1];
+        for(int j = 0; j < WIDTH; j++){
+            row[j] = copyMap[i][j];
+        }
+        row[WIDTH] = '\0';
+        std::cout << row << std::endl;
+    }
 }
 
 int findIndexBomb(vector<Bomb> &listBombs,y,x){
