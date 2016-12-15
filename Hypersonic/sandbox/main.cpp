@@ -75,10 +75,10 @@ int main(int argc, char *argv[]){
         updateTick(&listBombs);
         //Explose each bomb at 0
         exploseBomb(&listBombs, map);
-        //Remove bomb explosed
         //Update score
         //Check if player dead
         //Update map with explosion
+        //Display map to console
         //Give input to each player
         //Do action that each player output (add new bomb / placement player)
         
@@ -117,13 +117,13 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
                 idxBombToRemove[nbBombToRemove] = idx;
                 nbBombToRemove++;                
             }
-            if(true == map.isObstableForBomb(listBombs[idxBomb].y,i)){
+            if(true == isObstableForBomb(map[listBombs[idxBomb].y][i])){
                 detectStop = true;
-                if(true == map.isABox(listBombs[idxBomb].y,i))
+                if(true == isABox(map[listBombs[idxBomb].y][i]))
                     nbExplosed++;
             }
-            if((true == map.canBeExplosed(listBombs[idxBomb].y,i)) && (true == updateMap))
-                map.grid[listBombs[idxBomb].y][i] = EXPLOSED;
+            if((true == canBeExplosed(map[listBombs[idxBomb].y][i])) && (true == updateMap))
+                map[listBombs[idxBomb].y][i] = EXPLOSED;
         }
         detectStop = false;
         i = listBombs[idxBomb].x;
@@ -135,13 +135,13 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
                 idxBombToRemove[nbBombToRemove] = idx;
                 nbBombToRemove++;                                
             }            
-            if(true == map.isObstableForBomb(listBombs[idxBomb].y,i)){
+            if(true == isObstableForBomb(map[listBombs[idxBomb].y][i])){
                 detectStop = true;
-                if(true == map.isABox(listBombs[idxBomb].y,i))
+                if(true == isABox(map[listBombs[idxBomb].y][i]))
                     nbExplosed++;
             }
-            if((true == map.canBeExplosed(listBombs[idxBomb].y,i)) && (true == updateMap))
-                map.grid[listBombs[idxBomb].y][i] = EXPLOSED;
+            if((true == canBeExplosed(map[listBombs[idxBomb].y][i])) && (true == updateMap))
+                map[listBombs[idxBomb].y][i] = EXPLOSED;
         }
         detectStop = false;
         char j = listBombs[idxBomb].y;
@@ -153,13 +153,13 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
                 idxBombToRemove[nbBombToRemove] = idx;
                 nbBombToRemove++;                                
             }            
-            if(true == map.isObstableForBomb(j,listBombs[idxBomb].x)){
+            if(true == isObstableForBomb(map[j][listBombs[idxBomb].x])){
                 detectStop = true;
-                if(true == map.isABox(j,listBombs[idxBomb].x))
+                if(true == isABox(map[j][listBombs[idxBomb].x]))
                     nbExplosed++;
             }
-            if((true == map.canBeExplosed(j,listBombs[idxBomb].x)) && (true == updateMap))
-                map.grid[j][listBombs[idxBomb].x] = EXPLOSED;
+            if((true == canBeExplosed(map[j][listBombs[idxBomb].x])) && (true == updateMap))
+                map[j][listBombs[idxBomb].x] = EXPLOSED;
 
         }
         detectStop = false;
@@ -172,33 +172,83 @@ void exploseBomb(vector<tBomb> &listBombs, char **map, bool updateMap = true){
                 idxBombToRemove[nbBombToRemove] = idx;
                 nbBombToRemove++;                                
             }               
-            if(true == map.isObstableForBomb(j,listBombs[idxBomb].x)){
+            if(true == isObstableForBomb(map[j][listBombs[idxBomb].x])){
                 detectStop = true;
-                if(true == map.isABox(j,listBombs[idxBomb].x))
+                if(true == isABox(map[j][listBombs[idxBomb].x]))
                     nbExplosed++;
             }
             if((true == map.canBeExplosed(j,listBombs[idxBomb].x)) && (true == updateMap)) 
-                map.grid[j][listBombs[idxBomb].x] = EXPLOSED;
+                map[j][listBombs[idxBomb].x] = EXPLOSED;
 
         } 
         if(true == updateMap)
-            map.grid[listBombs[idxBomb].y][listBombs[idxBomb].x] = EXPLOSED;
+            map[listBombs[idxBomb].y][listBombs[idxBomb].x] = EXPLOSED;
     }            
     
-    //Sort idxBombToRemove
+    //Sort idxBombToRemove (sort max to min)
+    int idxBombToRemoveSorted[100];
+    for(int j=0; j < nbBombToRemove; j++){
+        int max = -1;
+        int idxMax = -1;        
+        for(int i=0; i < nbBombToRemove; i++){
+            if(idxBombToRemove[i] > max){
+                max = idxBombToRemove[i];
+                idxMax = i;
+            }
+        };
+        idxBombToRemoveSorted[j] = max;
+        idxBombToRemove[idxMax] = -2;
+    }
+    
+    //Remove bomb explosed from the vector
+    for(int i=0; i < nbBombToRemove; i++){
+        idxToRemove = idxBombToRemoveSorted[i];
+        listBombs.erase(listBombs.begin()+idxToRemove);
+    }
     
     
     
 
 }
 
-int findIndexBomb(vector<Bomb> listBombs,y,x){
+int findIndexBomb(vector<Bomb> &listBombs,y,x){
     int retIdx = -1;
     for(int i=0; i < listBombs.size(); i++){
         if(listBombs.x == x && listBombs.y == y)
             retIdx = i;
     }
     return retIdx;
+}
+
+inline bool isABox(char c){
+    bool ret = false;
+    if( (BOX == c) || 
+        (BOX_ITEM_RANGE == c) ||
+        (BOX_ITEM_BOMB == c)
+    )
+        ret = true;
+    return ret;
+}
+
+inline bool isObstableForBomb(char c){
+    bool ret = false;
+    if( (BOX == c)  ||
+        (BOMB == c) ||
+        (BOX_ITEM_RANGE == c) ||
+        (BOX_ITEM_BOMB == c) ||
+        (ITEM_RANGE == c) ||
+        (ITEM_BOMB == c) ||
+        (CELL_WALL == c)
+    )
+        ret = true;
+    return ret;
+}
+
+inline bool canBeExplosed(char c){
+    bool ret = true;
+    if( CELL_WALL == c)
+        ret = false;
+    return ret;
 }
 
     
